@@ -4,7 +4,6 @@ import io.confluent.kafka.serializers.KafkaAvroDeserializer
 import mu.KotlinLogging
 import org.apache.avro.generic.GenericRecord
 import org.apache.kafka.clients.consumer.ConsumerConfig
-import org.apache.kafka.common.serialization.StringDeserializer
 
 private val log = KotlinLogging.logger {}
 
@@ -16,7 +15,7 @@ internal fun work(params: Params) {
             mapOf(
                 ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to params.kafkaBrokers,
                 "schema.registry.url" to params.kafkaSchemaRegistry,
-                ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to StringDeserializer::class.java,
+                ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG to KafkaAvroDeserializer::class.java,
                 ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG to KafkaAvroDeserializer::class.java,
                 ConsumerConfig.GROUP_ID_CONFIG to params.kafkaClientID,
                 ConsumerConfig.CLIENT_ID_CONFIG to params.kafkaClientID,
@@ -28,7 +27,7 @@ internal fun work(params: Params) {
                     cMap.addKafkaSecurity(params.kafkaUser, params.kafkaPassword, params.kafkaSecProt, params.kafkaSaslMec)
                 else cMap
             },
-            listOf(params.kafkaTopic)
+            listOf(params.kafkaTopic), fromBeginning = true
         ) { cRecords ->
             if (!cRecords.isEmpty) {
                 log.info { "Key: ${cRecords.first() .key()}" }
