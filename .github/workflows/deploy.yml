@@ -70,7 +70,7 @@ jobs:
         env:
           APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
           CLUSTER: dev-sbs
-          RESOURCE: .nais/dev.yamlƒ
+          RESOURCE: .nais/dev.yaml
 
 #  deploy-prod:
 #    name: Deploy to NAIS prod
