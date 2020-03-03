@@ -12,7 +12,7 @@ internal fun work(params: Params) {
 
     log.info { "bootstrap work session starting" }
 
-        getKafkaConsumerByConfig<String, GenericRecord>(
+        getKafkaConsumerByConfig<GenericRecord, GenericRecord>(
             mapOf(
                 ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to params.kafkaBrokers,
                 "schema.registry.url" to params.kafkaSchemaRegistry,

@@ -41,7 +41,6 @@ fun Params.kafkaSecurityEnabled(): Boolean = kafkaSecurity == "TRUE"
 fun Params.kafkaSecurityComplete(): Boolean =
         kafkaSecProt.isNotEmpty() && kafkaSaslMec.isNotEmpty() && kafkaUser.isNotEmpty() && kafkaPassword.isNotEmpty()
 
-
 internal fun String.readFile(): String? =
         try {
             File(this).readText(Charsets.UTF_8)
