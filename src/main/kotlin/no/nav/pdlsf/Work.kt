@@ -2,7 +2,6 @@ package no.nav.pdlsf
 
 import io.confluent.kafka.serializers.KafkaAvroDeserializer
 import mu.KotlinLogging
-import org.apache.avro.generic.GenericRecord
 import org.apache.kafka.clients.consumer.ConsumerConfig
 
 private val log = KotlinLogging.logger {}
@@ -11,7 +10,7 @@ internal fun work(params: Params) {
 
     log.info { "bootstrap work session starting" }
 
-        getKafkaConsumerByConfig<GenericRecord, GenericRecord>(
+        getKafkaConsumerByConfig<String, String>(
             mapOf(
                 ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG to params.kafkaBrokers,
                 "schema.registry.url" to params.kafkaSchemaRegistry,
@@ -30,8 +29,8 @@ internal fun work(params: Params) {
             listOf(params.kafkaTopic), fromBeginning = true
         ) { cRecords ->
             if (!cRecords.isEmpty) {
-                log.info { "Key, fields: ${cRecords.first().key().schema.fields}" }
-                log.info { "Value, fields: ${cRecords.first().value().schema.fields}" }
+                log.info { "Key, fields: ${cRecords.first().key()}" }
+                log.info { "Value, fields: ${cRecords.first().value()}" }
                 ConsumerStates.IsFinished
             } else {
                 log.info { "Kafka events completed for now - leaving kafka consumer loop" }
