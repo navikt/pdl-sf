@@ -30,8 +30,8 @@ internal fun work(params: Params) {
             listOf(params.kafkaTopic), fromBeginning = true
         ) { cRecords ->
             if (!cRecords.isEmpty) {
-                log.info { "Key: ${cRecords.first().key()}" }
-                log.info { "Value: ${cRecords.first().value()}" }
+                log.info { "Key, fields: ${cRecords.first().key().schema.fields}" }
+                log.info { "Value, fields: ${cRecords.first().value().schema.fields}" }
                 ConsumerStates.IsFinished
             } else {
                 log.info { "Kafka events completed for now - leaving kafka consumer loop" }
