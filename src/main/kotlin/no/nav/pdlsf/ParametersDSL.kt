@@ -7,6 +7,7 @@ object ParamsFactory {
     val p: Params by lazy { Params() }
 }
 
+// TODO:: Read parameters from vault
 data class Params(
         // kafka details
     val kafkaBrokers: String = System.getenv("KAFKA_BROKERS")?.toString() ?: "",
@@ -16,8 +17,8 @@ data class Params(
     val kafkaSecProt: String = System.getenv("KAFKA_SECPROT")?.toString() ?: "",
     val kafkaSaslMec: String = System.getenv("KAFKA_SASLMEC")?.toString() ?: "",
     val kafkaUser: String = System.getenv("KAFKA_USER")?.toString() ?: "",
-    val kafkaPassword: String = ("/var/run/secrets/nais.io/serviceuser/username".readFile() ?: "username"), // System.getenv("KAFKA_PASSWORD")?.toString() ?: "",
-    val kafkaTopic: String = ("/var/run/secrets/nais.io/serviceuser/password".readFile() ?: "password"), // System.getenv("KAFKA_TOPIC")?.toString() ?: "",
+    val kafkaPassword: String = System.getenv("KAFKA_PASSWORD")?.toString() ?: "",
+    val kafkaTopic: String = System.getenv("KAFKA_TOPIC")?.toString() ?: "",
 
         // salesforce details
     val sfInstType: SalesforceInstancetype = SalesforceInstancetype.valueOf(System.getenv("SF_INSTTYPE") ?: "PREPROD"),
