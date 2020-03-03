@@ -1,5 +1,8 @@
 package no.nav.pdlsf
 
+import java.io.File
+import java.io.FileNotFoundException
+
 object ParamsFactory {
     val p: Params by lazy { Params() }
 }
@@ -13,8 +16,8 @@ data class Params(
     val kafkaSecProt: String = System.getenv("KAFKA_SECPROT")?.toString() ?: "",
     val kafkaSaslMec: String = System.getenv("KAFKA_SASLMEC")?.toString() ?: "",
     val kafkaUser: String = System.getenv("KAFKA_USER")?.toString() ?: "",
-    val kafkaPassword: String = System.getenv("KAFKA_PASSWORD")?.toString() ?: "",
-    val kafkaTopic: String = System.getenv("KAFKA_TOPIC")?.toString() ?: "",
+    val kafkaPassword: String = ("/var/run/secrets/nais.io/serviceuser/username".readFile() ?: "username"), // System.getenv("KAFKA_PASSWORD")?.toString() ?: "",
+    val kafkaTopic: String = ("/var/run/secrets/nais.io/serviceuser/password".readFile() ?: "password"), // System.getenv("KAFKA_TOPIC")?.toString() ?: "",
 
         // salesforce details
     val sfInstType: SalesforceInstancetype = SalesforceInstancetype.valueOf(System.getenv("SF_INSTTYPE") ?: "PREPROD"),
@@ -37,3 +40,11 @@ fun Params.kafkaSecurityEnabled(): Boolean = kafkaSecurity == "TRUE"
 
 fun Params.kafkaSecurityComplete(): Boolean =
         kafkaSecProt.isNotEmpty() && kafkaSaslMec.isNotEmpty() && kafkaUser.isNotEmpty() && kafkaPassword.isNotEmpty()
+
+
+internal fun String.readFile(): String? =
+        try {
+            File(this).readText(Charsets.UTF_8)
+        } catch (err: FileNotFoundException) {
+            null
+        }
