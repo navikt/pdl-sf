@@ -1,11 +1,13 @@
 package no.nav.pdlsf
 
 import io.confluent.kafka.serializers.KafkaAvroDeserializer
+import kotlinx.serialization.ImplicitReflectionSerializer
 import mu.KotlinLogging
 import org.apache.kafka.clients.consumer.ConsumerConfig
 
 private val log = KotlinLogging.logger {}
 
+@ImplicitReflectionSerializer
 internal fun work(params: Params) {
 
     log.info { "bootstrap work session starting" }
@@ -28,9 +30,40 @@ internal fun work(params: Params) {
             },
             listOf(params.kafkaTopic), fromBeginning = true
         ) { cRecords ->
+
             if (!cRecords.isEmpty) {
-                log.info { "Key, fields: ${cRecords.first().key()}" }
-                log.info { "Value, fields: ${cRecords.first().value()}" }
+                // TODO:: Må få inn en exit her!!!!!!!!!!!!,
+                // men hvis jeg fårstår det riktig skal den nå kun processere en poll dvs 100 records
+                val list = cRecords.map {
+                    it.value().getQueryFromJsonString().let { q ->
+                        SalsforceObject(
+                                personCObject = q.createKafkaPersonCMessage(),
+                                accountObject = q.createKafkaAccountMessage()
+                        )
+                    }
+                }
+
+                val toAccountCSV = list.map { it.accountObject }.toAccountCSV()
+                val toPersonCCSV = list.map { it.personCObject }.toPersonCCSV()
+
+                doAuthorization { authorization ->
+                    authorization.createJob(
+                            JobSpecification(
+                                    obj = "AccountT__c", // TODO :: Endre til Account, men opprette custom og teste mot først
+                                    operation = Operation.INSERT
+                            )
+                    ) { completeAccountCSVBatch ->
+                        completeAccountCSVBatch(toAccountCSV)
+                    }
+                    authorization.createJob(
+                            JobSpecification(
+                                    obj = "PersonT__c", // TODO :: Endre til Person__c, men opprette custom og teste mot først
+                                    operation = Operation.INSERT
+                            )
+                    ) { completePersonCCSVBatch ->
+                        completePersonCCSVBatch(toPersonCCSV)
+                    }
+                }
                 ConsumerStates.IsFinished
             } else {
                 log.info { "Kafka events completed for now - leaving kafka consumer loop" }

@@ -2,6 +2,7 @@ package no.nav.ereg
 
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.ImplicitReflectionSerializer
 import mu.KotlinLogging
 import no.nav.pdlsf.Metrics
 import no.nav.pdlsf.NaisDSL
@@ -11,6 +12,7 @@ import no.nav.pdlsf.ServerState
 import no.nav.pdlsf.ShutdownHook
 import no.nav.pdlsf.work
 
+@ImplicitReflectionSerializer
 object Bootstrap {
 
     private val log = KotlinLogging.logger { }

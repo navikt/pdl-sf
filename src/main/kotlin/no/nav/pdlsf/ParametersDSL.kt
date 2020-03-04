@@ -16,8 +16,8 @@ data class Params(
     val kafkaSecurity: String = System.getenv("KAFKA_SECURITY")?.toString()?.toUpperCase() ?: "",
     val kafkaSecProt: String = System.getenv("KAFKA_SECPROT")?.toString() ?: "",
     val kafkaSaslMec: String = System.getenv("KAFKA_SASLMEC")?.toString() ?: "",
-    val kafkaUser: String = System.getenv("KAFKA_USER")?.toString() ?: "",
-    val kafkaPassword: String = System.getenv("KAFKA_PASSWORD")?.toString() ?: "",
+    val kafkaUser: String = ("/var/run/secrets/nais.io/serviceuser/username".readFile() ?: "username"), // System.getenv("KAFKA_USER")?.toString() ?: "",
+    val kafkaPassword: String = ("/var/run/secrets/nais.io/serviceuser/password".readFile() ?: "password"), // System.getenv("KAFKA_PASSWORD")?.toString() ?: "",
     val kafkaTopic: String = System.getenv("KAFKA_TOPIC")?.toString() ?: "",
 
         // salesforce details
@@ -25,7 +25,7 @@ data class Params(
     val sfClientID: String = System.getenv("SF_CLIENTID") ?: "3MVG92H4TjwUcLlJIqjsODbsRUS_SyXMVAuaoZvZJpDwJlf29cO00qGniQv29e2AfJbhHzi5Qb_GxOAUuOUFt",
     val sfUsername: String = System.getenv("SF_USERNAME") ?: "kafka.integrasjon@navtest.no",
         // keystore details
-    val ksPath: String = System.getenv("KS_PATH") ?: "/Users/torsteinnesby/Certificates/keystorejksB64",
+    val ksPath: String = getStringFromResource("keystorejksB64"), // System.getenv("KS_PATH") ?: "/Users/torsteinnesby/Certificates/keystorejksB64",
     val ksPwd: String = System.getenv("KS_PWD") ?: "password",
     val pkAlias: String = System.getenv("PK_ALIAS") ?: "testjwt",
     val pkPwd: String = System.getenv("PK_PWD") ?: "password",
@@ -48,3 +48,6 @@ internal fun String.readFile(): String? =
         } catch (err: FileNotFoundException) {
             null
         }
+
+internal fun getStringFromResource(path: String) =
+        ParamsFactory::class.java.getResourceAsStream(path).bufferedReader().use { it.readText() }
