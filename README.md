@@ -4,7 +4,7 @@
 ## Tools
 - Kotlin
 - Gradle
-- Kotlintest test framework
+- Kotest test framework
 
 ## Components
 - Kafka client

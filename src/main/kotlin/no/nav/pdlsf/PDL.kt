@@ -13,29 +13,12 @@ import org.joda.time.LocalDateTime.now
 
 private val log = KotlinLogging.logger { }
 
-@UnstableDefault
-@ImplicitReflectionSerializer
-fun main() {
-    val query = value.getQueryFromJsonString()
-    println(query)
-
-    val adressebeskyttelse: String = query.hentPerson.adressebeskyttelse.findGjeldeneAdressebeskytelse()
-
-    val sikkerhetstiltak: List<Person.Sikkerhetstiltak>? = query.hentPerson.sikkerhetstiltak.findGjelendeSikkerhetstiltak()
-    println(sikkerhetstiltak)
-
-    val kam: KafkaAccountMessage = query.createKafkaAccountMessage()
-    val kpm: KafkaPersonCMessage = query.createKafkaPersonCMessage()
-    println(kam)
-    println(kpm)
-}
-
-private fun List<Person.Sikkerhetstiltak>.findGjelendeSikkerhetstiltak(): List<Person.Sikkerhetstiltak>? {
+internal fun List<Person.Sikkerhetstiltak>.findGjelendeSikkerhetstiltak(): List<Person.Sikkerhetstiltak>? {
     return this.filter { it.gyldigTilOgMed.isAfter(LocalDate.now()) }
             .filter { it.metadata.endringer.filter { it.type.name.equals(Endringstype.OPPHOE.name) }.isEmpty() }
 }
 
-private fun List<Person.Adressebeskyttelse>.findGjeldeneAdressebeskytelse(): String {
+internal fun List<Person.Adressebeskyttelse>.findGjeldeneAdressebeskytelse(): String {
     return this.sortedWith(nullsFirst(compareBy { it.folkeregistermetadata.gyldighetstidspunkt })).firstOrNull { isNotOpphoert(it.folkeregistermetadata) }?.gradering?.name.orEmpty()
 }
 
@@ -44,7 +27,7 @@ private fun isNotOpphoert(folkeregistermetadata: Folkeregistermetadata): Boolean
     return now().isBefore(LocalDateTime(folkeregistermetadata.opphoerstidspunkt))
 }
 
-private fun List<Person.Navn>.findGjelendeFregNavn(): Person.Navn {
+internal fun List<Person.Navn>.findGjelendeFregNavn(): Person.Navn {
     return this.filter { (it.folkeregistermetadata != null) }.sortedBy { it.folkeregistermetadata?.sekvens }.first()
 }
 
@@ -55,11 +38,11 @@ fun Query.createKafkaPersonCMessage(): KafkaPersonCMessage {
             kommunenummer = hentPerson.bostedsadresse.findGjelendeBostedsadresse()?.matrikkeladresse?.kommunenummer.orEmpty() // TODO :: Ikke påkrevdfelt. Hvordan håndtere dette
     ) }
 
-private fun List<Person.Sikkerhetstiltak>.toSfListString(): String {
+internal fun List<Person.Sikkerhetstiltak>.toSfListString(): String {
     return this.map { it.beskrivelse }.toList().joinToString(";")
 }
 
-private fun List<Person.Bostedsadresse>.findGjelendeBostedsadresse(): Person.Bostedsadresse? {
+internal fun List<Person.Bostedsadresse>.findGjelendeBostedsadresse(): Person.Bostedsadresse? {
     return this.sortedWith(nullsFirst(compareBy { it.folkeregistermetadata.gyldighetstidspunkt })).firstOrNull { isNotOpphoert(it.folkeregistermetadata) }
 }
 
@@ -273,210 +256,3 @@ data class SalsforceObject(
     val personCObject: KafkaPersonCMessage,
     val accountObject: KafkaAccountMessage
 )
-
-val value: String = """
-    {
-      "hentPerson": {
-        "adressebeskyttelse": [
-          
-        ],
-        "bostedsadresse": [
-          
-        ],
-        "deltBosted": [
-          
-        ],
-        "doedsfall": [
-          
-        ],
-        "falskIdentitet": null,
-        "familierelasjoner": [
-          
-        ],
-        "foedsel": [
-          {
-            "foedselsaar": 1949,
-            "foedselsdato": "1949-11-10",
-            "foedeland": "NOR",
-            "foedested": null,
-            "foedekommune": "1505",
-            "metadata": {
-              "opplysningsId": "e3f66ee8-8fa6-483f-97cb-b8793ebabe96",
-              "master": "Freg",
-              "endringer": [
-                {
-                  "type": "OPPRETT",
-                  "registrert": "2019-09-06T04:24:01.516",
-                  "registrertAv": "Folkeregisteret",
-                  "systemkilde": "FREG",
-                  "kilde": "KILDE_DSF"
-                }
-              ]
-            }
-          }
-        ],
-        "folkeregisteridentifikator": [
-          {
-            "identifikasjonsnummer": "10114900171",
-            "type": "FNR",
-            "status": "I_BRUK",
-            "folkeregistermetadata": {
-              "ajourholdstidspunkt": "2019-09-05T11:17:51.992",
-              "gyldighetstidspunkt": null,
-              "opphoerstidspunkt": null,
-              "kilde": "KILDE_DSF",
-              "aarsak": null,
-              "sekvens": null
-            },
-            "metadata": {
-              "opplysningsId": "4d664db0-1b42-4fc5-a95e-84ffa36f2bcf",
-              "master": "Freg",
-              "endringer": [
-                {
-                  "type": "OPPRETT",
-                  "registrert": "2019-06-25T09:54:52.624",
-                  "registrertAv": "Folkeregisteret",
-                  "systemkilde": "FREG",
-                  "kilde": "dsf-folkeregister-synkronisering"
-                },
-                {
-                  "type": "KORRIGER",
-                  "registrert": "2019-09-06T04:24:01.516",
-                  "registrertAv": "Folkeregisteret",
-                  "systemkilde": "FREG",
-                  "kilde": "KILDE_DSF"
-                }
-              ]
-            }
-          }
-        ],
-        "folkeregisterpersonstatus": [
-          {
-            "status": "bosatt",
-            "forenkletStatus": "bosattEtterFolkeregisterloven",
-            "folkeregistermetadata": {
-              "ajourholdstidspunkt": "2019-09-05T11:17:51.992",
-              "gyldighetstidspunkt": "2019-09-05T11:17:51.992",
-              "opphoerstidspunkt": null,
-              "kilde": "KILDE_DSF",
-              "aarsak": null,
-              "sekvens": null
-            },
-            "metadata": {
-              "opplysningsId": "260ca299-a7e4-4105-a81e-beda379f0fcd",
-              "master": "Freg",
-              "endringer": [
-                {
-                  "type": "OPPRETT",
-                  "registrert": "2019-09-06T04:24:01.516",
-                  "registrertAv": "Folkeregisteret",
-                  "systemkilde": "FREG",
-                  "kilde": "KILDE_DSF"
-                }
-              ]
-            }
-          }
-        ],
-        "fullmakt": [
-          
-        ],
-        "identitetsgrunnlag": [
-          
-        ],
-        "kontaktinformasjonForDoedsbo": [
-          
-        ],
-        "kjoenn": [
-          {
-            "kjoenn": "MANN",
-            "folkeregistermetadata": {
-              "ajourholdstidspunkt": null,
-              "gyldighetstidspunkt": null,
-              "opphoerstidspunkt": null,
-              "kilde": "KILDE_DSF",
-              "aarsak": null,
-              "sekvens": null
-            },
-            "metadata": {
-              "opplysningsId": "7f6e41f4-527b-4ad7-bd4e-d2db848ee815",
-              "master": "Freg",
-              "endringer": [
-                {
-                  "type": "OPPRETT",
-                  "registrert": "2019-10-10T09:44:45.637",
-                  "registrertAv": "Folkeregisteret",
-                  "systemkilde": "FREG",
-                  "kilde": "KILDE_DSF"
-                }
-              ]
-            }
-          }
-        ],
-        "navn": [
-          {
-            "fornavn": "VIKTOR",
-            "mellomnavn": null,
-            "etternavn": "ROSENBERG",
-            "forkortetNavn": "VIKTOR  ROSENBERG",
-            "originaltNavn": null,
-            "folkeregistermetadata": {
-              "ajourholdstidspunkt": null,
-              "gyldighetstidspunkt": "2019-01-01T00:00:00",
-              "opphoerstidspunkt": null,
-              "kilde": "KILDE_DSF",
-              "aarsak": "Første gangs navnevalg",
-              "sekvens": 0
-            },
-            "metadata": {
-              "opplysningsId": "906c8218-9956-4ec8-91a4-aa9f9790df64",
-              "master": "Freg",
-              "endringer": [
-                {
-                  "type": "OPPRETT",
-                  "registrert": "2019-10-11T14:25:39.382",
-                  "registrertAv": "Folkeregisteret",
-                  "systemkilde": "FREG",
-                  "kilde": "KILDE_DSF"
-                }
-              ]
-            }
-          }
-        ],
-        "opphold": [
-          
-        ],
-        "sikkerhetstiltak": [
-          
-        ],
-        "sivilstand": [
-          
-        ],
-        "statsborgerskap": [
-          
-        ],
-        "tilrettelagtKommunikasjon": [
-          
-        ],
-        "utenlandskIdentifikasjonsnummer": [
-          
-        ],
-        "telefonnummer": [
-          
-        ]
-      },
-      "hentIdenter": {
-        "identer": [
-          {
-            "ident": "10114900171",
-            "historisk": false,
-            "gruppe": "FOLKEREGISTERIDENT"
-          },
-          {
-            "ident": "2733733247036",
-            "historisk": false,
-            "gruppe": "AKTORID"
-          }
-        ]
-      }
-    }
-""".trimIndent()
