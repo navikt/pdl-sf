@@ -36,6 +36,7 @@ internal fun work(params: Params) {
             if (!cRecords.isEmpty) {
                 // TODO:: Må få inn en exit her og iterere over hele settet, nå kun processere en poll dvs 100 records
                 val list = cRecords.map {
+                    log.info { "Value on topic ${it.value()}" }
                     it.value().getQueryFromJsonString().filterPDLQuery(listOf(Filter.LEVENDE, Filter.BOSTED_TROMS_OG_FINNMARK))?.let { q ->
                         SalsforceObject(
                                 personCObject = q.createKafkaPersonCMessage(),
