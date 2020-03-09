@@ -18,14 +18,13 @@ enum class Filter {
     BOSTED_TROMS_OG_FINNMARK
 }
 
-
 fun Query.filterPDLQuery(filters: List<Filter>): Query? {
     if (filters.contains(Filter.LEVENDE)) {
-        if(!this.hentPerson.doedsfall.isNullOrEmpty()) return null
+        if (!this.hentPerson.doedsfall.isNullOrEmpty()) return null
     }
 
     if (filters.contains(Filter.BOSTED_TROMS_OG_FINNMARK)) {
-        if(this.hentPerson.bostedsadresse.findGjelendeBostedsadresse()?.matrikkeladresse?.kommunenummer?.startsWith("54") == false) return null
+        if (this.hentPerson.bostedsadresse.findGjelendeBostedsadresse()?.matrikkeladresse?.kommunenummer?.startsWith("54") == false) return null
     }
 
     return this
