@@ -25,7 +25,7 @@ data class Params(
     val sfClientID: String = System.getenv("SF_CLIENTID") ?: "3MVG92H4TjwUcLlJIqjsODbsRUS_SyXMVAuaoZvZJpDwJlf29cO00qGniQv29e2AfJbhHzi5Qb_GxOAUuOUFt",
     val sfUsername: String = System.getenv("SF_USERNAME") ?: "kafka.integrasjon@navtest.no",
         // keystore details
-    val ksPath: String = getStringFromResource("keystorejksB64"), // System.getenv("KS_PATH") ?: "/Users/torsteinnesby/Certificates/keystorejksB64",
+    val ksPath: String = getStringFromResource("/keystorejksB64"), // System.getenv("KS_PATH") ?: "/Users/torsteinnesby/Certificates/keystorejksB64",
     val ksPwd: String = System.getenv("KS_PWD") ?: "password",
     val pkAlias: String = System.getenv("PK_ALIAS") ?: "testjwt",
     val pkPwd: String = System.getenv("PK_PWD") ?: "password",
