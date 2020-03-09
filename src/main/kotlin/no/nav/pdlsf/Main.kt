@@ -1,8 +1,10 @@
 package no.nav.pdlsf
 
+import kotlinx.serialization.ImplicitReflectionSerializer
 import mu.KotlinLogging
 import no.nav.ereg.Bootstrap
 
+@ImplicitReflectionSerializer
 fun main() {
     val log = KotlinLogging.logger {}
 

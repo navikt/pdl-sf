@@ -2,11 +2,13 @@ package no.nav.pdlsf
 
 import io.confluent.kafka.serializers.KafkaAvroDeserializer
 import kotlinx.serialization.ImplicitReflectionSerializer
+import kotlinx.serialization.UnstableDefault
 import mu.KotlinLogging
 import org.apache.kafka.clients.consumer.ConsumerConfig
 
 private val log = KotlinLogging.logger {}
 
+@UseExperimental(UnstableDefault::class)
 @ImplicitReflectionSerializer
 internal fun work(params: Params) {
 
@@ -32,8 +34,7 @@ internal fun work(params: Params) {
         ) { cRecords ->
 
             if (!cRecords.isEmpty) {
-                // TODO:: Må få inn en exit her!!!!!!!!!!!!,
-                // men hvis jeg fårstår det riktig skal den nå kun processere en poll dvs 100 records
+                // TODO:: Må få inn en exit her og iterere over hele settet, nå kun processere en poll dvs 100 records
                 val list = cRecords.map {
                     it.value().getQueryFromJsonString().let { q ->
                         SalsforceObject(
