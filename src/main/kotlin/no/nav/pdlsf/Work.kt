@@ -45,9 +45,9 @@ internal fun work(params: Params) {
                             )
                         }
                     }.getOrThrow().also {
-                        log.warn { "Unable to serialize Offset-partition ${consumerRecord.offset()} - ${consumerRecord.partition()}"}
-                        log.warn { "AktørId  ${consumerRecord.key()} "}
-                        log.warn { consumerRecord.value()}
+                        log.warn { "Unable to serialize Offset-partition ${consumerRecord.offset()} - ${consumerRecord.partition()}" }
+                        log.warn { "AktørId  ${consumerRecord.key()} " }
+                        log.warn { consumerRecord.value() }
                     }
                 }
 
