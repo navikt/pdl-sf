@@ -36,7 +36,7 @@ internal fun work(params: Params) {
             if (!cRecords.isEmpty) {
                 // TODO:: Må få inn en exit her og iterere over hele settet, nå kun processere en poll dvs 100 records
                 val list = cRecords.map {
-                    it.value().getQueryFromJsonString().let { q ->
+                    it.value().getQueryFromJsonString().filterPDLQuery(listOf(Filter.LEVENDE, Filter.BOSTED_TROMS_OG_FINNMARK))?.let { q ->
                         SalsforceObject(
                                 personCObject = q.createKafkaPersonCMessage(),
                                 accountObject = q.createKafkaAccountMessage()
@@ -44,8 +44,8 @@ internal fun work(params: Params) {
                     }
                 }
 
-                val toAccountCSV = list.map { it.accountObject }.toAccountCSV()
-                val toPersonCCSV = list.map { it.personCObject }.toPersonCCSV()
+                val toAccountCSV = list.mapNotNull { it?.accountObject }.toAccountCSV()
+                val toPersonCCSV = list.mapNotNull { it?.personCObject }.toPersonCCSV()
 
                 doAuthorization { authorization ->
                     authorization.createJob(

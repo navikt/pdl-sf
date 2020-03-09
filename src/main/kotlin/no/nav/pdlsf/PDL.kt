@@ -13,6 +13,24 @@ import org.joda.time.LocalDateTime.now
 
 private val log = KotlinLogging.logger { }
 
+enum class Filter {
+    LEVENDE,
+    BOSTED_TROMS_OG_FINNMARK
+}
+
+
+fun Query.filterPDLQuery(filters: List<Filter>): Query? {
+    if (filters.contains(Filter.LEVENDE)) {
+        if(!this.hentPerson.doedsfall.isNullOrEmpty()) return null
+    }
+
+    if (filters.contains(Filter.BOSTED_TROMS_OG_FINNMARK)) {
+        if(this.hentPerson.bostedsadresse.findGjelendeBostedsadresse()?.matrikkeladresse?.kommunenummer?.startsWith("54") == false) return null
+    }
+
+    return this
+}
+
 internal fun List<Person.Sikkerhetstiltak>.findGjelendeSikkerhetstiltak(): List<Person.Sikkerhetstiltak>? {
     return this.filter { it.gyldigTilOgMed.isAfter(LocalDate.now()) }
             .filter { it.metadata.endringer.filter { it.type.name.equals(Endringstype.OPPHOE.name) }.isEmpty() }
