@@ -1,6 +1,5 @@
 package no.nav.pdlsf
 
-import java.io.FileInputStream
 import java.security.KeyStore
 import java.security.PrivateKey
 import java.security.Signature
@@ -30,7 +29,7 @@ internal data class JWTClaimSet(
 internal fun getHeaderClaimset(cs: JWTClaimSet): String = JWTHeader().toJson().encodeB64() + "." + cs.toJson().encodeB64()
 
 private data class KeystoreDetails(
-    val path: String = ParamsFactory.p.ksPath,
+    val ksBase64encoded: String = ParamsFactory.p.ksBase64encoded,
     val pwd: String = ParamsFactory.p.ksPwd,
     val pkAlias: String = ParamsFactory.p.pkAlias,
     val pkPwd: String = ParamsFactory.p.pkPwd
@@ -46,7 +45,7 @@ private data class Signature(val content: String) : SignatureBase()
 private fun KeystoreDetails.sign(data: ByteArray): SignatureBase = runCatching {
     KeyStore.getInstance("JKS")
             .apply {
-                load(FileInputStream(path).bufferedReader().readText().decodeB64().inputStream(), pwd.toCharArray())
+                load(ksBase64encoded.decodeB64().inputStream(), pwd.toCharArray())
             }
             .run { getKey(pkAlias, pkPwd.toCharArray()) as PrivateKey }
             .let { privateKey ->

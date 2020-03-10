@@ -18,18 +18,6 @@ enum class Filter {
     BOSTED_TROMS_OG_FINNMARK
 }
 
-fun Query.filterPDLQuery(filters: List<Filter>): Query? {
-    if (filters.contains(Filter.LEVENDE)) {
-        if (!this.hentPerson.doedsfall.isNullOrEmpty()) return null
-    }
-
-    if (filters.contains(Filter.BOSTED_TROMS_OG_FINNMARK)) {
-        if (this.hentPerson.bostedsadresse.findGjelendeBostedsadresse()?.matrikkeladresse?.kommunenummer?.startsWith("54") == false) return null
-    }
-
-    return this
-}
-
 internal fun List<Person.Sikkerhetstiltak>.findGjelendeSikkerhetstiltak(): List<Person.Sikkerhetstiltak>? {
     return this.filter { it.gyldigTilOgMed.isAfter(LocalDate.now()) }
             .filter { it.metadata.endringer.filter { it.type.name.equals(Endringstype.OPPHOE.name) }.isEmpty() }
@@ -74,7 +62,9 @@ fun Query.createKafkaAccountMessage(): KafkaAccountMessage {
 
 @UnstableDefault
 @ImplicitReflectionSerializer
-fun String.getQueryFromJsonString() = runCatching { Json.nonstrict.parse<Query>(this) }.getOrThrow()
+fun String.getQueryFromJson() = runCatching { Json.nonstrict.parse<Query>(this) }
+        .onFailure { log.error { "Cannot convert kafka value to query - ${it.localizedMessage}" } }
+        .getOrDefault(InvalidQuery)
 
 @Serializable
 enum class IdentGruppe {
@@ -158,11 +148,21 @@ data class Folkeregistermetadata(
     val aarsak: String?,
     val sekvens: Int?
 )
+
+sealed class QueryBase
+object InvalidQuery : QueryBase()
+
 @Serializable
 data class Query(
     val hentPerson: Person,
     val hentIdenter: Identliste
-)
+) : QueryBase() {
+    fun inRegion(r: String) = this.hentPerson.bostedsadresse.findGjelendeBostedsadresse()?.matrikkeladresse?.kommunenummer?.startsWith(r) ?: false
+}
+
+val Query.isAlive: Boolean
+    get() = this.hentPerson.doedsfall.isNullOrEmpty()
+
 @Serializable
 data class Identliste(
     val identer: List<IdentInformasjon>
@@ -246,7 +246,7 @@ data class KafkaAccountMessage(
 }
 
 fun List<KafkaAccountMessage>.toAccountCSV(): String = StringBuilder().let { sb ->
-    sb.appendln("INT_PersonIdent__c,FirstName,MiddleName,LastName")
+    sb.appendln("INT_PersonIdent_c__c,FirstName__c,MiddleName__c,LastName__c")
     this.forEach {
         sb.appendln(it.toCSVLine())
     }
@@ -258,18 +258,18 @@ data class KafkaPersonCMessage(
     val sikkerhetstiltak: String,
     val kommunenummer: String
 ) {
-    fun toCSVLine() = """"$gradering","$sikkerhetstiltak","$kommunenummer","${kommunenummer.substring(0,1)}"""
+    fun toCSVLine() = """"$gradering","$sikkerhetstiltak","$kommunenummer","${kommunenummer.substring(0,1)}""""
 }
 
 fun List<KafkaPersonCMessage>.toPersonCCSV(): String = StringBuilder().let { sb ->
-    sb.appendln("INT_Confidential__c,INT_SecurityMeasures__c,INT_MunichipalityNumber__c,INT_RegionNumber__c")
+    sb.appendln("INT_Confidential_c__c,INT_SecurityMeasures_c__c,INT_MunichipalityNumber_c__c,INT_RegionNumber_c__c")
     this.forEach {
         sb.appendln(it.toCSVLine())
     }
     sb.toString()
 }
 
-data class SalsforceObject(
+data class SalesforceObject(
     val personCObject: KafkaPersonCMessage,
     val accountObject: KafkaAccountMessage
 )

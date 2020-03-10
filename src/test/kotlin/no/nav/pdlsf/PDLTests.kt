@@ -2,31 +2,27 @@ package no.nav.pdlsf
 
 import io.kotlintest.specs.StringSpec
 import kotlinx.serialization.ImplicitReflectionSerializer
+import kotlinx.serialization.UnstableDefault
 
+@UseExperimental(UnstableDefault::class)
 @ImplicitReflectionSerializer
 class PDLTests : StringSpec({
-    val query = value.getQueryFromJsonString()
 
-    println(query)
-
-    val adressebeskyttelse: String = query.hentPerson.adressebeskyttelse.findGjeldeneAdressebeskytelse()
-
-    val sikkerhetstiltak: List<Person.Sikkerhetstiltak>? = query.hentPerson.sikkerhetstiltak.findGjelendeSikkerhetstiltak()
-    println(sikkerhetstiltak)
-
-    val kam: KafkaAccountMessage = query.createKafkaAccountMessage()
-    val kpm: KafkaPersonCMessage = query.createKafkaPersonCMessage()
-    println(kam)
-    println(kpm)
+//    val adressebeskyttelse: String = query?.hentPerson?.adressebeskyttelse?.findGjeldeneAdressebeskytelse() ?: ""
+//
+//    val sikkerhetstiltak: List<Person.Sikkerhetstiltak>? = query?.hentPerson?.sikkerhetstiltak?.findGjelendeSikkerhetstiltak()
+//    println(sikkerhetstiltak)
+//
+//    val kam: KafkaAccountMessage? = query?.createKafkaAccountMessage() ?: null
+//    val kpm: KafkaPersonCMessage? = query?.createKafkaPersonCMessage() ?: null
+//    println(kam)
+//    println(kpm)
 })
 
 val value: String = """
     {
       "hentPerson": {
         "adressebeskyttelse": [
-          
-        ],
-        "bostedsadresse": [
           
         ],
         "deltBosted": [
