@@ -24,18 +24,11 @@ object Metrics {
         .help("No. of successful requests to Salesforce since last restart")
         .register()
 
-    val failedRequest: Gauge = Gauge
-        .build()
-        .name("failed_request_gauge")
-        .help("No. of failed requests to Salesforce since last restart")
-        .register()
-
-    val sentOrgs: Gauge = Gauge
-        .build()
-        .name("sent_organisation_gauge")
-        .labelNames("type")
-        .help("No. of organisations sent to Salesforce in last work session")
-        .register()
+    val invalidQuery: Gauge = Gauge
+            .build()
+            .name("invalid_query_gauge")
+            .help("No. of failed kafka values converted to query on topic since last restart")
+            .register()
 
     init {
         DefaultExports.initialize()
@@ -43,13 +36,10 @@ object Metrics {
     }
 
     fun sessionReset() {
-        sentOrgs.clear()
+        invalidQuery.clear()
     }
 
     fun resetAll() {
-        responseLatency.clear()
-        successfulRequest.clear()
-        failedRequest.clear()
-        sentOrgs.clear()
+        invalidQuery.clear()
     }
 }

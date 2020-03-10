@@ -13,11 +13,6 @@ import org.joda.time.LocalDateTime.now
 
 private val log = KotlinLogging.logger { }
 
-enum class Filter {
-    LEVENDE,
-    BOSTED_TROMS_OG_FINNMARK
-}
-
 internal fun List<Person.Sikkerhetstiltak>.findGjelendeSikkerhetstiltak(): List<Person.Sikkerhetstiltak>? {
     return this.filter { it.gyldigTilOgMed.isAfter(LocalDate.now()) }
             .filter { it.metadata.endringer.filter { it.type.name.equals(Endringstype.OPPHOE.name) }.isEmpty() }
@@ -63,7 +58,10 @@ fun Query.createKafkaAccountMessage(): KafkaAccountMessage {
 @UnstableDefault
 @ImplicitReflectionSerializer
 fun String.getQueryFromJson() = runCatching { Json.nonstrict.parse<Query>(this) }
-        .onFailure { log.error { "Cannot convert kafka value to query - ${it.localizedMessage}" } }
+        .onFailure {
+            Metrics.invalidQuery.inc()
+            log.error { "Cannot convert kafka value to query - ${it.localizedMessage}" }
+        }
         .getOrDefault(InvalidQuery)
 
 @Serializable
