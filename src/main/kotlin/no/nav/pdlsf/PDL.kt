@@ -311,8 +311,11 @@ fun List<KafkaPersonCMessage>.toPersonCCSV(): String = StringBuilder().let { sb 
     }
     sb.toString()
 }
+sealed class SalesforceObjectBase
+
+object NoSalesforceObject : SalesforceObjectBase()
 
 data class SalesforceObject(
     val personCObject: KafkaPersonCMessage,
     val accountObject: KafkaAccountMessage
-)
+) : SalesforceObjectBase()

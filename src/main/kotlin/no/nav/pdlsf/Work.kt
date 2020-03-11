@@ -13,7 +13,7 @@ private val log = KotlinLogging.logger {}
 internal fun work(params: Params) {
 
     log.info { "bootstrap work session starting" }
-    val list: MutableList<SalesforceObject> = mutableListOf()
+    val m: MutableMap<String, SalesforceObjectBase> = mutableMapOf()
 
     getKafkaConsumerByConfig<String, String>(
         mapOf(
@@ -36,46 +36,60 @@ internal fun work(params: Params) {
         if (!cRecords.isEmpty) {
             log.info { "Number of records : ${cRecords.count()}" }
 
-//            cRecords.map { cr ->
-//
-//                when (val query = cr.value().getQueryFromJson()) {
-//                    is InvalidQuery -> Unit
-//                    is Query -> if (query.isAlive && query.inRegion("54")) list.add(
-//                            SalesforceObject(
-//                                    personCObject = query.createKafkaPersonCMessage(),
-//                                    accountObject = query.createKafkaAccountMessage()
-//                            ))
-//                }
-//            }
+            cRecords.map { cr ->
 
-            ConsumerStates.IsOkNoCommit
+                when (val v = cr.value()) {
+                    null -> m[cr.key()] = NoSalesforceObject
+                    is String -> if (v.isNotEmpty())
+                        when (val query = cr.value().getQueryFromJson()) {
+                            is InvalidQuery -> Unit
+                            is Query -> if (query.isAlive && query.inRegion("54"))
+                                m[cr.key()] =
+                                    SalesforceObject(
+                                            personCObject = query.createKafkaPersonCMessage(),
+                                            accountObject = query.createKafkaAccountMessage()
+                                    )
+                        }
+                }
+            }
+
+            ConsumerStates.IsFinished
         } else {
             log.info { "Kafka events completed for now - leaving kafka consumer loop" }
             ConsumerStates.IsFinished
         }
     }
 
-    if (list.isNotEmpty()) {
-        val toAccountCSV = list.map { it.accountObject }.toAccountCSV()
-        val toPersonCCSV = list.map { it.personCObject }.toPersonCCSV()
+    m.filterValues { it is SalesforceObject }
+        .map { it.value }
+        .toList()
+        .filterIsInstance<SalesforceObject>()
+        .let { l ->
 
-        doAuthorization { authorization ->
-            authorization.createJob(
-                    JobSpecification(
-                            obj = "AccountT_c__c", // TODO :: Endre til Account, men opprette custom og teste mot først
-                            operation = Operation.INSERT
-                    )
-            ) { completeAccountCSVBatch ->
-                completeAccountCSVBatch(toAccountCSV)
-            }
-            authorization.createJob(
-                    JobSpecification(
-                            obj = "PersonT_c__c", // TODO :: Endre til Person__c, men opprette custom og teste mot først
-                            operation = Operation.INSERT
-                    )
-            ) { completePersonCCSVBatch ->
-                completePersonCCSVBatch(toPersonCCSV)
+            if (l.isNotEmpty()) {
+                log.info { "Processing list of ${m.size} Salesforce entries" }
+
+                val toAccountCSV = l.map { it.accountObject }.toList().toAccountCSV()
+                val toPersonCCSV = l.map { it.personCObject }.toPersonCCSV()
+
+                doAuthorization { authorization ->
+                    authorization.createJob(
+                            JobSpecification(
+                                    obj = "AccountT_c__c", // TODO :: Endre til Account, men opprette custom og teste mot først
+                                    operation = Operation.INSERT
+                            )
+                    ) { completeAccountCSVBatch ->
+                        completeAccountCSVBatch(toAccountCSV)
+                    }
+                    authorization.createJob(
+                            JobSpecification(
+                                    obj = "PersonT_c__c", // TODO :: Endre til Person__c, men opprette custom og teste mot først
+                                    operation = Operation.INSERT
+                            )
+                    ) { completePersonCCSVBatch ->
+                        completePersonCCSVBatch(toPersonCCSV)
+                    }
+                }
             }
         }
-    }
 }
