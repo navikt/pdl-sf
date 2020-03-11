@@ -61,7 +61,7 @@ internal fun work(params: Params) {
     doAuthorization { authorization ->
         authorization.createJob(
                 JobSpecification(
-                        obj = "AccountT__c", // TODO :: Endre til Account, men opprette custom og teste mot først
+                        obj = "AccountT_c__c", // TODO :: Endre til Account, men opprette custom og teste mot først
                         operation = Operation.INSERT
                 )
         ) { completeAccountCSVBatch ->
@@ -69,7 +69,7 @@ internal fun work(params: Params) {
         }
         authorization.createJob(
                 JobSpecification(
-                        obj = "PersonT__c", // TODO :: Endre til Person__c, men opprette custom og teste mot først
+                        obj = "PersonT_c__c", // TODO :: Endre til Person__c, men opprette custom og teste mot først
                         operation = Operation.INSERT
                 )
         ) { completePersonCCSVBatch ->
