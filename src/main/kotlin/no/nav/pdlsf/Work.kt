@@ -36,14 +36,14 @@ internal fun work(params: Params) {
         if (!cRecords.isEmpty) {
             log.info { "Number of records : ${cRecords.count()}" }
 
-            cRecords.map { cr ->
+            cRecords.forEach { cr ->
 
                 when (val v = cr.value()) {
                     null -> m[cr.key()] = NoSalesforceObject
                     is String -> if (v.isNotEmpty())
-                        when (val query = cr.value().getQueryFromJson()) {
+                        when (val query = v.getQueryFromJson()) {
                             is InvalidQuery -> Unit
-                            is Query -> if (query.isAlive && query.inRegion("54"))
+                            is Query -> // if (query.isAlive && query.inRegion("54"))
                                 m[cr.key()] =
                                     SalesforceObject(
                                             personCObject = query.createKafkaPersonCMessage(),
@@ -60,6 +60,8 @@ internal fun work(params: Params) {
         }
     }
 
+    log.info { "Ready to prepare max ${m.size} records for salesforce" }
+
     m.filterValues { it is SalesforceObject }
         .map { it.value }
         .toList()
@@ -67,7 +69,7 @@ internal fun work(params: Params) {
         .let { l ->
 
             if (l.isNotEmpty()) {
-                log.info { "Processing list of ${m.size} Salesforce entries" }
+                log.info { "Processing list of ${l.size} Salesforce entries" }
 
                 val toAccountCSV = l.map { it.accountObject }.toList().toAccountCSV()
                 val toPersonCCSV = l.map { it.personCObject }.toPersonCCSV()
