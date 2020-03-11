@@ -43,12 +43,14 @@ internal fun work(params: Params) {
                     is String -> if (v.isNotEmpty())
                         when (val query = v.getQueryFromJson()) {
                             is InvalidQuery -> Unit
-                            is Query -> // if (query.isAlive && query.inRegion("54"))
+                            is Query -> { // if (query.isAlive && query.inRegion("54"))
+                                log.info { "Valid Query Object - $query" }
                                 m[cr.key()] =
-                                    SalesforceObject(
-                                            personCObject = query.createKafkaPersonCMessage(),
-                                            accountObject = query.createKafkaAccountMessage()
-                                    )
+                                        SalesforceObject(
+                                                personCObject = query.createKafkaPersonCMessage(),
+                                                accountObject = query.createKafkaAccountMessage()
+                                        )
+                            }
                         }
                 }
             }

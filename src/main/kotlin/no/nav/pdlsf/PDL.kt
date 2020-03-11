@@ -19,7 +19,6 @@ import mu.KotlinLogging
 
 private val log = KotlinLogging.logger { }
 
-// @Serializer(forClass = LocalDate::class)
 object IsoLocalDateSerializer : LocalDateSerializer(DateTimeFormatter.ISO_LOCAL_DATE)
 
 open class LocalDateSerializer(private val formatter: DateTimeFormatter) : KSerializer<LocalDate> {
@@ -33,7 +32,6 @@ open class LocalDateSerializer(private val formatter: DateTimeFormatter) : KSeri
     }
 }
 
-// @Serializer(forClass = LocalDateTime::class)
 object IsoLocalDateTimeSerializer : LocalDateTimeSerializer(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
 
 open class LocalDateTimeSerializer(private val formatter: DateTimeFormatter) : KSerializer<LocalDateTime> {
@@ -301,7 +299,7 @@ data class KafkaPersonCMessage(
     val sikkerhetstiltak: String,
     val kommunenummer: String
 ) {
-    fun toCSVLine() = """"$gradering","$sikkerhetstiltak","$kommunenummer","${kommunenummer.substring(0,1)}""""
+    fun toCSVLine() = """"$gradering","$sikkerhetstiltak","$kommunenummer","${kotlin.runCatching {kommunenummer .substring(0,1) }.getOrDefault("")}""""
 }
 
 fun List<KafkaPersonCMessage>.toPersonCCSV(): String = StringBuilder().let { sb ->
