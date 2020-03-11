@@ -63,15 +63,17 @@ internal fun List<Person.Navn>.findGjelendeFregNavn(): Person.Navn {
     return this.filter { (it.folkeregistermetadata != null) }.sortedBy { it.folkeregistermetadata?.sekvens }.first()
 }
 
-fun Query.createKafkaPersonCMessage(): KafkaPersonCMessage {
+fun Query.createPersonCMessage(): PersonCMessageBase {
     return kotlin.runCatching {
-        KafkaPersonCMessage(
+        PersonCMessage(
                 fnr = this.hentIdenter.identer.first { !it.historisk && it.gruppe.name.equals(IdentGruppe.FOLKEREGISTERIDENT.name) }.ident,
                 gradering = hentPerson.adressebeskyttelse.findGjeldeneAdressebeskytelse(),
                 sikkerhetstiltak = hentPerson.sikkerhetstiltak.findGjelendeSikkerhetstiltak()?.toSfListString().orEmpty(),
                 kommunenummer = hentPerson.bostedsadresse.findGjelendeBostedsadresse()?.matrikkeladresse?.kommunenummer.orEmpty() // TODO :: Ikke påkrevdfelt. Hvordan håndtere dette
         )
-    }.getOrThrow()
+    }
+    .onFailure { log.info { "Unable to create Person_C message - ${it.localizedMessage}" } }
+    .getOrDefault(InvalidPersonCMessageBase)
 }
 
 internal fun List<Person.Sikkerhetstiltak>.toSfListString(): String {
@@ -82,15 +84,17 @@ internal fun List<Person.Bostedsadresse>.findGjelendeBostedsadresse(): Person.Bo
     return this.sortedWith(nullsFirst(compareBy { it.folkeregistermetadata.gyldighetstidspunkt })).firstOrNull { isNotOpphoert(it.folkeregistermetadata) }
 }
 
-fun Query.createKafkaAccountMessage(): KafkaAccountMessage {
+fun Query.createAccountMessage(): AccountMessageBase {
     return kotlin.runCatching {
-        KafkaAccountMessage(
+        AccountMessage(
                 fnr = this.hentIdenter.identer.first { !it.historisk && it.gruppe.name.equals(IdentGruppe.FOLKEREGISTERIDENT.name) }.ident,
                 fornavn = this.hentPerson.navn.findGjelendeFregNavn().fornavn,
                 mellomnavn = this.hentPerson.navn.findGjelendeFregNavn().mellomnavn.orEmpty(),
                 etternavn = this.hentPerson.navn.findGjelendeFregNavn().etternavn
         )
-    }.getOrThrow()
+    }
+    .onFailure { log.info { "Unable to create Account message - ${it.localizedMessage}" } }
+    .getOrDefault(InvalidAccountMessageBase)
 }
 
 @UnstableDefault
@@ -283,17 +287,20 @@ data class Person(
     )
 }
 
-data class KafkaAccountMessage(
+sealed class AccountMessageBase
+object InvalidAccountMessageBase : AccountMessageBase()
+
+data class AccountMessage(
     val fnr: String,
     val fornavn: String,
     val mellomnavn: String,
     val etternavn: String
-) {
+) : AccountMessageBase() {
     fun toCSVLine() = """"$fnr","$fornavn","$mellomnavn","$etternavn""""
 }
 
 // TODO:: Fjerne __c på før vi går mot SF i preprod
-fun List<KafkaAccountMessage>.toAccountCSV(): String = StringBuilder().let { sb ->
+fun List<AccountMessage>.toAccountCSV(): String = StringBuilder().let { sb ->
     sb.appendln("INT_PersonIdent_c__c,FirstName__c,MiddleName__c,LastName__c")
     this.forEach {
         sb.appendln(it.toCSVLine())
@@ -301,17 +308,20 @@ fun List<KafkaAccountMessage>.toAccountCSV(): String = StringBuilder().let { sb 
     sb.toString()
 }
 
-data class KafkaPersonCMessage(
+sealed class PersonCMessageBase
+object InvalidPersonCMessageBase : PersonCMessageBase()
+
+data class PersonCMessage(
     val fnr: String,
     val gradering: String,
     val sikkerhetstiltak: String,
     val kommunenummer: String
-) {
+) : PersonCMessageBase() {
     fun toCSVLine() = """"$fnr","$gradering","$sikkerhetstiltak","$kommunenummer","${kotlin.runCatching {kommunenummer .substring(0,1) }.getOrDefault("")}""""
 }
 
 // TODO:: Name__c, skal bare være Name og de andre skal også fjerne __c på før vi går mot SF i preprod
-fun List<KafkaPersonCMessage>.toPersonCCSV(): String = StringBuilder().let { sb ->
+fun List<PersonCMessage>.toPersonCCSV(): String = StringBuilder().let { sb ->
     sb.appendln("Name__c,INT_Confidential_c__c,INT_SecurityMeasures_c__c,INT_MunichipalityNumber_c__c,INT_RegionNumber_c__c")
     this.forEach {
         sb.appendln(it.toCSVLine())
@@ -323,6 +333,6 @@ sealed class SalesforceObjectBase
 object NoSalesforceObject : SalesforceObjectBase()
 
 data class SalesforceObject(
-    val personCObject: KafkaPersonCMessage,
-    val accountObject: KafkaAccountMessage
+    val personCObject: PersonCMessage,
+    val accountObject: AccountMessage
 ) : SalesforceObjectBase()
