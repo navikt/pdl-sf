@@ -20,7 +20,7 @@ import mu.KotlinLogging
 private val log = KotlinLogging.logger { }
 
 // @Serializer(forClass = LocalDate::class)
-object IsoLocalDateSerializer : LocalDateSerializer(DateTimeFormatter.ISO_DATE)
+object IsoLocalDateSerializer : LocalDateSerializer(DateTimeFormatter.ISO_LOCAL_DATE)
 
 open class LocalDateSerializer(private val formatter: DateTimeFormatter) : KSerializer<LocalDate> {
     override val descriptor: SerialDescriptor = StringDescriptor.withName("java.time.LocalDate")
@@ -34,7 +34,7 @@ open class LocalDateSerializer(private val formatter: DateTimeFormatter) : KSeri
 }
 
 // @Serializer(forClass = LocalDateTime::class)
-object IsoLocalDateTimeSerializer : LocalDateTimeSerializer(DateTimeFormatter.ISO_DATE)
+object IsoLocalDateTimeSerializer : LocalDateTimeSerializer(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
 
 open class LocalDateTimeSerializer(private val formatter: DateTimeFormatter) : KSerializer<LocalDateTime> {
     override val descriptor: SerialDescriptor = StringDescriptor.withName("java.time.LocalDateTime")

@@ -7,6 +7,11 @@ import kotlinx.serialization.UnstableDefault
 @UseExperimental(UnstableDefault::class)
 @ImplicitReflectionSerializer
 class PDLTests : StringSpec({
+//    when (val query = value.getQueryFromJson()) {
+//        is InvalidQuery -> Unit
+//        is Query -> // if (query.isAlive && query.inRegion("54"))
+//            println(query)
+//    }
 
 //    val adressebeskyttelse: String = query?.hentPerson?.adressebeskyttelse?.findGjeldeneAdressebeskytelse() ?: ""
 //
@@ -23,6 +28,9 @@ val value: String = """
     {
       "hentPerson": {
         "adressebeskyttelse": [
+          
+        ],
+        "bostedsadresse": [
           
         ],
         "deltBosted": [
