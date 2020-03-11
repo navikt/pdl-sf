@@ -64,12 +64,15 @@ internal fun List<Person.Navn>.findGjelendeFregNavn(): Person.Navn {
 }
 
 fun Query.createKafkaPersonCMessage(): KafkaPersonCMessage {
-    return KafkaPersonCMessage(
-            fnr = this.hentIdenter.identer.first { !it.historisk && it.gruppe.name.equals(IdentGruppe.FOLKEREGISTERIDENT.name) }.ident,
-            gradering = hentPerson.adressebeskyttelse.findGjeldeneAdressebeskytelse(),
-            sikkerhetstiltak = hentPerson.sikkerhetstiltak.findGjelendeSikkerhetstiltak()?.toSfListString().orEmpty(),
-            kommunenummer = hentPerson.bostedsadresse.findGjelendeBostedsadresse()?.matrikkeladresse?.kommunenummer.orEmpty() // TODO :: Ikke påkrevdfelt. Hvordan håndtere dette
-    ) }
+    return kotlin.runCatching {
+        KafkaPersonCMessage(
+                fnr = this.hentIdenter.identer.first { !it.historisk && it.gruppe.name.equals(IdentGruppe.FOLKEREGISTERIDENT.name) }.ident,
+                gradering = hentPerson.adressebeskyttelse.findGjeldeneAdressebeskytelse(),
+                sikkerhetstiltak = hentPerson.sikkerhetstiltak.findGjelendeSikkerhetstiltak()?.toSfListString().orEmpty(),
+                kommunenummer = hentPerson.bostedsadresse.findGjelendeBostedsadresse()?.matrikkeladresse?.kommunenummer.orEmpty() // TODO :: Ikke påkrevdfelt. Hvordan håndtere dette
+        )
+    }.getOrThrow()
+}
 
 internal fun List<Person.Sikkerhetstiltak>.toSfListString(): String {
     return this.map { it.beskrivelse }.toList().joinToString(";")
@@ -80,12 +83,14 @@ internal fun List<Person.Bostedsadresse>.findGjelendeBostedsadresse(): Person.Bo
 }
 
 fun Query.createKafkaAccountMessage(): KafkaAccountMessage {
-    return KafkaAccountMessage(
-            fnr = this.hentIdenter.identer.first { !it.historisk && it.gruppe.name.equals(IdentGruppe.FOLKEREGISTERIDENT.name) }.ident,
-            fornavn = this.hentPerson.navn.findGjelendeFregNavn().fornavn,
-            mellomnavn = this.hentPerson.navn.findGjelendeFregNavn().mellomnavn.orEmpty(),
-            etternavn = this.hentPerson.navn.findGjelendeFregNavn().etternavn
-    )
+    return kotlin.runCatching {
+        KafkaAccountMessage(
+                fnr = this.hentIdenter.identer.first { !it.historisk && it.gruppe.name.equals(IdentGruppe.FOLKEREGISTERIDENT.name) }.ident,
+                fornavn = this.hentPerson.navn.findGjelendeFregNavn().fornavn,
+                mellomnavn = this.hentPerson.navn.findGjelendeFregNavn().mellomnavn.orEmpty(),
+                etternavn = this.hentPerson.navn.findGjelendeFregNavn().etternavn
+        )
+    }.getOrThrow()
 }
 
 @UnstableDefault
@@ -287,6 +292,7 @@ data class KafkaAccountMessage(
     fun toCSVLine() = """"$fnr","$fornavn","$mellomnavn","$etternavn""""
 }
 
+// TODO:: Fjerne __c på før vi går mot SF i preprod
 fun List<KafkaAccountMessage>.toAccountCSV(): String = StringBuilder().let { sb ->
     sb.appendln("INT_PersonIdent_c__c,FirstName__c,MiddleName__c,LastName__c")
     this.forEach {
@@ -304,8 +310,9 @@ data class KafkaPersonCMessage(
     fun toCSVLine() = """"$fnr","$gradering","$sikkerhetstiltak","$kommunenummer","${kotlin.runCatching {kommunenummer .substring(0,1) }.getOrDefault("")}""""
 }
 
+// TODO:: Name__c, skal bare være Name og de andre skal også fjerne __c på før vi går mot SF i preprod
 fun List<KafkaPersonCMessage>.toPersonCCSV(): String = StringBuilder().let { sb ->
-    sb.appendln("INT_PersonIdent_c__c,INT_Confidential_c__c,INT_SecurityMeasures_c__c,INT_MunichipalityNumber_c__c,INT_RegionNumber_c__c")
+    sb.appendln("Name__c,INT_Confidential_c__c,INT_SecurityMeasures_c__c,INT_MunichipalityNumber_c__c,INT_RegionNumber_c__c")
     this.forEach {
         sb.appendln(it.toCSVLine())
     }
