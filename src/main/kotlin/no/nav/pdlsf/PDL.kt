@@ -1,17 +1,51 @@
 package no.nav.pdlsf
 
-import kotlinx.serialization.ContextualSerialization
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalDateTime.now
+import java.time.format.DateTimeFormatter
+import kotlinx.serialization.Decoder
+import kotlinx.serialization.Encoder
 import kotlinx.serialization.ImplicitReflectionSerializer
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerialDescriptor
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UnstableDefault
+import kotlinx.serialization.internal.StringDescriptor
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.parse
+import kotlinx.serialization.withName
 import mu.KotlinLogging
-import org.joda.time.LocalDate
-import org.joda.time.LocalDateTime
-import org.joda.time.LocalDateTime.now
 
 private val log = KotlinLogging.logger { }
+
+// @Serializer(forClass = LocalDate::class)
+object IsoLocalDateSerializer : LocalDateSerializer(DateTimeFormatter.ISO_DATE)
+
+open class LocalDateSerializer(private val formatter: DateTimeFormatter) : KSerializer<LocalDate> {
+    override val descriptor: SerialDescriptor = StringDescriptor.withName("java.time.LocalDate")
+    override fun deserialize(decoder: Decoder): LocalDate {
+        return LocalDate.parse(decoder.decodeString(), formatter)
+    }
+
+    override fun serialize(encoder: Encoder, obj: LocalDate) {
+        encoder.encodeString(obj.format(formatter))
+    }
+}
+
+// @Serializer(forClass = LocalDateTime::class)
+object IsoLocalDateTimeSerializer : LocalDateTimeSerializer(DateTimeFormatter.ISO_DATE)
+
+open class LocalDateTimeSerializer(private val formatter: DateTimeFormatter) : KSerializer<LocalDateTime> {
+    override val descriptor: SerialDescriptor = StringDescriptor.withName("java.time.LocalDateTime")
+    override fun deserialize(decoder: Decoder): LocalDateTime {
+        return LocalDateTime.parse(decoder.decodeString(), formatter)
+    }
+
+    override fun serialize(encoder: Encoder, obj: LocalDateTime) {
+        encoder.encodeString(obj.format(formatter))
+    }
+}
 
 internal fun List<Person.Sikkerhetstiltak>.findGjelendeSikkerhetstiltak(): List<Person.Sikkerhetstiltak>? {
     return this.filter { it.gyldigTilOgMed.isAfter(LocalDate.now()) }
@@ -24,7 +58,7 @@ internal fun List<Person.Adressebeskyttelse>.findGjeldeneAdressebeskytelse(): St
 
 // TODO:: Sjekke denne... Usikker på om denne konverteringen fra String til LocalDatetime er Ok, men det er en feil som kommer å går med @ContextualSerialization val opphoerstidspunkt: LocalDateTime?,
 private fun isNotOpphoert(folkeregistermetadata: Folkeregistermetadata): Boolean {
-    return now().isBefore(LocalDateTime(folkeregistermetadata.opphoerstidspunkt))
+    return now().isBefore(folkeregistermetadata.opphoerstidspunkt)
 }
 
 internal fun List<Person.Navn>.findGjelendeFregNavn(): Person.Navn {
@@ -134,7 +168,8 @@ data class Metadata(
     @Serializable
     data class Endring(
         val type: Endringstype,
-        @ContextualSerialization val registrert: String,
+        @Serializable(with = IsoLocalDateTimeSerializer::class)
+        val registrert: LocalDateTime,
         val registrertAv: String,
         val systemkilde: String,
         val kilde: String
@@ -142,9 +177,12 @@ data class Metadata(
 }
 @Serializable
 data class Folkeregistermetadata(
-    @ContextualSerialization val ajourholdstidspunkt: LocalDateTime?,
-    @ContextualSerialization val gyldighetstidspunkt: LocalDateTime?,
-    @ContextualSerialization val opphoerstidspunkt: LocalDateTime?,
+    @Serializable(with = IsoLocalDateTimeSerializer::class)
+    val ajourholdstidspunkt: LocalDateTime?,
+    @Serializable(with = IsoLocalDateTimeSerializer::class)
+    val gyldighetstidspunkt: LocalDateTime?,
+    @Serializable(with = IsoLocalDateTimeSerializer::class)
+    val opphoerstidspunkt: LocalDateTime?,
     val kilde: String?,
     val aarsak: String?,
     val sekvens: Int?
@@ -187,7 +225,8 @@ data class Person(
 
     @Serializable
     data class Bostedsadresse(
-        @ContextualSerialization val angittFlyttedato: LocalDate,
+        @Serializable(with = IsoLocalDateSerializer::class)
+        val angittFlyttedato: LocalDate,
         val coAdressenavn: String,
         val vegadresse: Vegadresse,
         val matrikkeladresse: Matrikkeladresse,
@@ -198,7 +237,8 @@ data class Person(
 
     @Serializable
     data class Doedsfall(
-        @ContextualSerialization val doedsdato: LocalDate?,
+        @Serializable(with = IsoLocalDateSerializer::class)
+        val doedsdato: LocalDate?,
         val metadata: Metadata
     )
 
@@ -207,8 +247,10 @@ data class Person(
         val tiltakstype: String,
         val beskrivelse: String,
         val kontaktperson: SikkerhetstiltakKontaktperson,
-        @ContextualSerialization val gyldigFraOgMed: LocalDate,
-        @ContextualSerialization val gyldigTilOgMed: LocalDate,
+        @Serializable(with = IsoLocalDateSerializer::class)
+        val gyldigFraOgMed: LocalDate,
+        @Serializable(with = IsoLocalDateSerializer::class)
+        val gyldigTilOgMed: LocalDate,
         val metadata: Metadata
     ) {
         @Serializable
