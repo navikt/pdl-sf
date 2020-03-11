@@ -57,7 +57,10 @@ fun Query.createKafkaAccountMessage(): KafkaAccountMessage {
 
 @UnstableDefault
 @ImplicitReflectionSerializer
-fun String.getQueryFromJson() = runCatching { Json.nonstrict.parse<Query>(this) }
+fun String.getQueryFromJson() = runCatching {
+    Json.nonstrict.parse<Query>(this)
+    Metrics.sucessfulValueToQuery.inc()
+}
         .onFailure {
             Metrics.invalidQuery.inc()
             log.error { "Cannot convert kafka value to query - ${it.localizedMessage}" }

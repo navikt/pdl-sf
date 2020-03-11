@@ -30,6 +30,12 @@ object Metrics {
             .help("No. of failed kafka values converted to query on topic since last restart")
             .register()
 
+    val sucessfulValueToQuery: Gauge = Gauge
+            .build()
+            .name("sucessfully_value_to_query_gauge")
+            .help("No of sucessfully converted kafka topic values to query")
+            .register()
+
     init {
         DefaultExports.initialize()
         log.info { "Prometheus metrics are ready" }
@@ -37,9 +43,11 @@ object Metrics {
 
     fun sessionReset() {
         invalidQuery.clear()
+        sucessfulValueToQuery.clear()
     }
 
     fun resetAll() {
         invalidQuery.clear()
+        sucessfulValueToQuery.clear()
     }
 }
