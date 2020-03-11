@@ -142,9 +142,9 @@ data class Metadata(
 }
 @Serializable
 data class Folkeregistermetadata(
-    @ContextualSerialization val ajourholdstidspunkt: String?,
-    @ContextualSerialization val gyldighetstidspunkt: String?,
-    @ContextualSerialization val opphoerstidspunkt: String?,
+    @ContextualSerialization val ajourholdstidspunkt: LocalDateTime?,
+    @ContextualSerialization val gyldighetstidspunkt: LocalDateTime?,
+    @ContextualSerialization val opphoerstidspunkt: LocalDateTime?,
     val kilde: String?,
     val aarsak: String?,
     val sekvens: Int?
