@@ -65,6 +65,7 @@ internal fun List<Person.Navn>.findGjelendeFregNavn(): Person.Navn {
 
 fun Query.createKafkaPersonCMessage(): KafkaPersonCMessage {
     return KafkaPersonCMessage(
+            fnr = this.hentIdenter.identer.first { !it.historisk && it.gruppe.name.equals(IdentGruppe.FOLKEREGISTERIDENT.name) }.ident,
             gradering = hentPerson.adressebeskyttelse.findGjeldeneAdressebeskytelse(),
             sikkerhetstiltak = hentPerson.sikkerhetstiltak.findGjelendeSikkerhetstiltak()?.toSfListString().orEmpty(),
             kommunenummer = hentPerson.bostedsadresse.findGjelendeBostedsadresse()?.matrikkeladresse?.kommunenummer.orEmpty() // TODO :: Ikke påkrevdfelt. Hvordan håndtere dette
@@ -295,15 +296,16 @@ fun List<KafkaAccountMessage>.toAccountCSV(): String = StringBuilder().let { sb 
 }
 
 data class KafkaPersonCMessage(
+    val fnr: String,
     val gradering: String,
     val sikkerhetstiltak: String,
     val kommunenummer: String
 ) {
-    fun toCSVLine() = """"$gradering","$sikkerhetstiltak","$kommunenummer","${kotlin.runCatching {kommunenummer .substring(0,1) }.getOrDefault("")}""""
+    fun toCSVLine() = """"$fnr","$gradering","$sikkerhetstiltak","$kommunenummer","${kotlin.runCatching {kommunenummer .substring(0,1) }.getOrDefault("")}""""
 }
 
 fun List<KafkaPersonCMessage>.toPersonCCSV(): String = StringBuilder().let { sb ->
-    sb.appendln("INT_Confidential_c__c,INT_SecurityMeasures_c__c,INT_MunichipalityNumber_c__c,INT_RegionNumber_c__c")
+    sb.appendln("INT_PersonIdent_c__c,INT_Confidential_c__c,INT_SecurityMeasures_c__c,INT_MunichipalityNumber_c__c,INT_RegionNumber_c__c")
     this.forEach {
         sb.appendln(it.toCSVLine())
     }

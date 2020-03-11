@@ -71,7 +71,7 @@ internal fun work(params: Params) {
             if (l.isNotEmpty()) {
                 log.info { "Processing list of ${l.size} Salesforce entries" }
 
-                val toAccountCSV = l.map { it.accountObject }.toList().toAccountCSV()
+                val toAccountCSV = l.map { it.accountObject }.toAccountCSV()
                 val toPersonCCSV = l.map { it.personCObject }.toPersonCCSV()
 
                 doAuthorization { authorization ->
