@@ -24,7 +24,7 @@ internal fun work(params: Params) {
             ConsumerConfig.GROUP_ID_CONFIG to params.kafkaClientID,
             ConsumerConfig.CLIENT_ID_CONFIG to params.kafkaClientID,
             ConsumerConfig.AUTO_OFFSET_RESET_CONFIG to "earliest",
-            ConsumerConfig.MAX_POLL_RECORDS_CONFIG to 100, // 200 is the maximum batch size accepted by salesforce
+            // ConsumerConfig.MAX_POLL_RECORDS_CONFIG to 100, // 200 is the maximum batch size accepted by salesforce
             ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG to "false"
         ).let { cMap ->
             if (params.kafkaSecurityEnabled())
@@ -33,47 +33,49 @@ internal fun work(params: Params) {
         },
         listOf(params.kafkaTopic), fromBeginning = true
     ) { cRecords ->
-
         if (!cRecords.isEmpty) {
+            log.info { "Number of records : ${cRecords.count()}" }
 
-            cRecords.map { cr ->
+//            cRecords.map { cr ->
+//
+//                when (val query = cr.value().getQueryFromJson()) {
+//                    is InvalidQuery -> Unit
+//                    is Query -> if (query.isAlive && query.inRegion("54")) list.add(
+//                            SalesforceObject(
+//                                    personCObject = query.createKafkaPersonCMessage(),
+//                                    accountObject = query.createKafkaAccountMessage()
+//                            ))
+//                }
+//            }
 
-                when (val query = cr.value().getQueryFromJson()) {
-                    is InvalidQuery -> Unit
-                    is Query -> if (query.isAlive && query.inRegion("54")) list.add(
-                            SalesforceObject(
-                                    personCObject = query.createKafkaPersonCMessage(),
-                                    accountObject = query.createKafkaAccountMessage()
-                            ))
-                }
-            }
-
-            ConsumerStates.IsFinished
+            ConsumerStates.IsOkNoCommit
         } else {
             log.info { "Kafka events completed for now - leaving kafka consumer loop" }
             ConsumerStates.IsFinished
         }
     }
 
-    val toAccountCSV = list.map { it.accountObject }.toAccountCSV()
-    val toPersonCCSV = list.map { it.personCObject }.toPersonCCSV()
+    if (list.isNotEmpty()) {
+        val toAccountCSV = list.map { it.accountObject }.toAccountCSV()
+        val toPersonCCSV = list.map { it.personCObject }.toPersonCCSV()
 
-    doAuthorization { authorization ->
-        authorization.createJob(
-                JobSpecification(
-                        obj = "AccountT_c__c", // TODO :: Endre til Account, men opprette custom og teste mot først
-                        operation = Operation.INSERT
-                )
-        ) { completeAccountCSVBatch ->
-            completeAccountCSVBatch(toAccountCSV)
-        }
-        authorization.createJob(
-                JobSpecification(
-                        obj = "PersonT_c__c", // TODO :: Endre til Person__c, men opprette custom og teste mot først
-                        operation = Operation.INSERT
-                )
-        ) { completePersonCCSVBatch ->
-            completePersonCCSVBatch(toPersonCCSV)
+        doAuthorization { authorization ->
+            authorization.createJob(
+                    JobSpecification(
+                            obj = "AccountT_c__c", // TODO :: Endre til Account, men opprette custom og teste mot først
+                            operation = Operation.INSERT
+                    )
+            ) { completeAccountCSVBatch ->
+                completeAccountCSVBatch(toAccountCSV)
+            }
+            authorization.createJob(
+                    JobSpecification(
+                            obj = "PersonT_c__c", // TODO :: Endre til Person__c, men opprette custom og teste mot først
+                            operation = Operation.INSERT
+                    )
+            ) { completePersonCCSVBatch ->
+                completePersonCCSVBatch(toPersonCCSV)
+            }
         }
     }
 }
