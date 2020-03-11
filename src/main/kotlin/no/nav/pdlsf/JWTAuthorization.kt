@@ -45,6 +45,7 @@ private data class Signature(val content: String) : SignatureBase()
 private fun KeystoreDetails.sign(data: ByteArray): SignatureBase = runCatching {
     KeyStore.getInstance("JKS")
             .apply {
+                log.info { "ksBase64encoded value - $ksBase64encoded" }
                 load(ksBase64encoded.decodeB64().inputStream(), pwd.toCharArray())
             }
             .run { getKey(pkAlias, pkPwd.toCharArray()) as PrivateKey }
