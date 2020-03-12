@@ -40,25 +40,27 @@ internal fun work(params: Params) {
 
                 when (val v = cr.value()) {
                     null -> m[cr.key()] = NoSalesforceObject
-                    is String -> if (v.isNotEmpty())
-                        when (val query = v.getQueryFromJson()) {
-                            is InvalidQuery -> Unit
-                            is Query -> {
-                                // if (query.isAlive && query.inRegion("54"))
-                                val pm = query.createPersonCMessage()
-                                val am = query.createAccountMessage()
-                                if (pm is PersonCMessage && am is AccountMessage) {
-                                    m[cr.key()] =
-                                            SalesforceObject(
-                                                    personCObject = pm,
-                                                    accountObject = am
-                                            )
-                                    log.info { "Valid Query Object - $query" }
-                                } else {
-                                    log.error { "Fail createin PeronC or Account message from Query." }
-                                }
+                    is String -> if (v.isNotEmpty()) {
+                        log.info { "Topic value - $v" }
+                    when (val query = v.getQueryFromJson()) {
+                        is InvalidQuery -> Unit
+                        is Query -> {
+                            // if (query.isAlive && query.inRegion("54"))
+                            val pm = query.createPersonCMessage()
+                            val am = query.createAccountMessage()
+                            if (pm is PersonCMessage && am is AccountMessage) {
+                                m[cr.key()] =
+                                        SalesforceObject(
+                                                personCObject = pm,
+                                                accountObject = am
+                                        )
+                                log.info { "Valid Query Object - $query" }
+                            } else {
+                                log.error { "Fail createing PeronC or Account message from Query." }
                             }
                         }
+                    }
+                }
                 }
             }
 
