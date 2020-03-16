@@ -1,8 +1,8 @@
+import java.io.File
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
 import mu.KotlinLogging
 import no.nav.pdlsf.json
-import java.io.File
 
 private val log = KotlinLogging.logger { }
 
@@ -23,7 +23,7 @@ fun JsonElement.getFnr(): FnrBase = runCatching {
     }
     fnr?.let { Fnr(fnr.toString()) } ?: NoFnr
 }
-        .onFailure { log.info { "Failure - ${it.localizedMessage}" }  }
+        .onFailure { log.info { "Failure - ${it.localizedMessage}" } }
         .getOrDefault(NoFnr)
 
 fun main() {
@@ -31,5 +31,4 @@ fun main() {
     val person = json.parseJson(File("./src/test/resources/syntetiskPerson_1.json").readText())
 
     println(person.getFnr())
-
 }

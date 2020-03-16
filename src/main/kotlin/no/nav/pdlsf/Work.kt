@@ -34,7 +34,7 @@ internal fun work(params: Params) {
         listOf(params.kafkaTopic), fromBeginning = true
     ) { cRecords ->
         if (!cRecords.isEmpty) {
-            log.info { "Number of records : ${cRecords.count()}" }
+            // log.info { "Number of records : ${cRecords.count()}" }
 
             cRecords.forEach { cr ->
 
@@ -44,7 +44,7 @@ internal fun work(params: Params) {
                     when (val query = v.getQueryFromJson()) {
                         is InvalidQuery -> Unit
                         is Query -> {
-                            // if (query.isAlive && query.inRegion("54"))
+                            if (query.isAlive && query.inRegion("54"))
                             log.info { "Topic value - $v" }
                             log.info { "Valid Query Object - $query" }
                             val pm = query.createPersonCMessage()
@@ -64,7 +64,7 @@ internal fun work(params: Params) {
                 }
             }
 
-            ConsumerStates.IsFinished
+            ConsumerStates.IsOkNoCommit
         } else {
             log.info { "Kafka events completed for now - leaving kafka consumer loop" }
             ConsumerStates.IsFinished

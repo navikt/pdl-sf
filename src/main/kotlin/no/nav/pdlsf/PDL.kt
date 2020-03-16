@@ -46,17 +46,18 @@ open class LocalDateTimeSerializer(private val formatter: DateTimeFormatter) : K
 }
 
 internal fun List<Person.Sikkerhetstiltak>.findGjelendeSikkerhetstiltak(): List<Person.Sikkerhetstiltak>? {
-    return this.filter { it.gyldigTilOgMed.isAfter(LocalDate.now()) }
-            .filter { it.metadata.endringer.filter { it.type.name.equals(Endringstype.OPPHOE.name) }.isEmpty() }
+    return this.filter { it.gyldigTilOgMed.isAfter(LocalDate.now()) && it.metadata.endringer.none { endring -> endring.type == Endringstype.OPPHOER } }
 }
 
 internal fun List<Person.Adressebeskyttelse>.findGjeldeneAdressebeskytelse(): String {
-    return this.sortedWith(nullsFirst(compareBy { it.folkeregistermetadata.gyldighetstidspunkt })).firstOrNull { isNotOpphoert(it.folkeregistermetadata) }?.gradering?.name.orEmpty()
+    return this.sortedWith(nullsFirst(compareBy { it.folkeregistermetadata.gyldighetstidspunkt })).firstOrNull { isNotOpphoert(it.folkeregistermetadata) }?.gradering?.name
+            ?: ""
 }
 
-// TODO:: Sjekke denne... Usikker på om denne konverteringen fra String til LocalDatetime er Ok, men det er en feil som kommer å går med @ContextualSerialization val opphoerstidspunkt: LocalDateTime?,
-private fun isNotOpphoert(folkeregistermetadata: Folkeregistermetadata): Boolean {
-    return now().isBefore(folkeregistermetadata.opphoerstidspunkt)
+internal fun isNotOpphoert(folkeregistermetadata: Folkeregistermetadata): Boolean {
+    return runCatching { now().isBefore(folkeregistermetadata.opphoerstidspunkt) }
+            .onFailure { log.warn { "Verify isNotOpphoert faild with value ${folkeregistermetadata.opphoerstidspunkt} - ${it.localizedMessage}" } }
+            .getOrDefault(true)
 }
 
 internal fun List<Person.Navn>.findGjelendeFregNavn(): Person.Navn {
@@ -73,7 +74,7 @@ fun Query.createPersonCMessage(): PersonCMessageBase {
         )
     }
     .onFailure { log.info { "Unable to create Person_C message - ${it.localizedMessage}" } }
-    .getOrDefault(InvalidPersonCMessageBase)
+    .getOrDefault(InvalidPersonCMessage)
 }
 
 internal fun List<Person.Sikkerhetstiltak>.toSfListString(): String {
@@ -94,14 +95,14 @@ fun Query.createAccountMessage(): AccountMessageBase {
         )
     }
     .onFailure { log.info { "Unable to create Account message - ${it.localizedMessage}" } }
-    .getOrDefault(InvalidAccountMessageBase)
+    .getOrDefault(InvalidAccountMessage)
 }
 
 @UnstableDefault
 @ImplicitReflectionSerializer
-fun String.getQueryFromJson() = runCatching {
-    Json.nonstrict.parse<Query>(this)
+fun String.getQueryFromJson(): QueryBase = runCatching {
     Metrics.sucessfulValueToQuery.inc()
+    Json.nonstrict.parse<Query>(this)
 }
         .onFailure {
             Metrics.invalidQuery.inc()
@@ -127,7 +128,7 @@ enum class AdressebeskyttelseGradering {
 enum class Endringstype {
     OPPRETT,
     KORRIGER,
-    OPPHOE,
+    OPPHOER,
     ANNULER
 }
 
@@ -141,13 +142,13 @@ data class Vegadresse(
     val kommunenummer: String?,
     val tilleggsnavn: String?,
     val postnummer: String?,
-    val koordinater: Koordinater
+    val koordinater: Koordinater?
 )
 
 @Serializable
 data class Matrikkeladresse(
     val matrikkelId: Int?,
-    val bruksenhetsnummer: String?,
+    // val bruksenhetsnummer: String?,
     val tilleggsnavn: String?,
     val postnummer: String?,
     val kommunenummer: String?,
@@ -234,11 +235,11 @@ data class Person(
     @Serializable
     data class Bostedsadresse(
         @Serializable(with = IsoLocalDateSerializer::class)
-        val angittFlyttedato: LocalDate,
-        val coAdressenavn: String,
-        val vegadresse: Vegadresse,
-        val matrikkeladresse: Matrikkeladresse,
-        val ukjentBosted: UkjentBosted,
+        val angittFlyttedato: LocalDate?,
+        val coAdressenavn: String?,
+        val vegadresse: Vegadresse?,
+        val matrikkeladresse: Matrikkeladresse?,
+        val ukjentBosted: UkjentBosted?,
         val folkeregistermetadata: Folkeregistermetadata,
         val metadata: Metadata
     )
@@ -254,7 +255,7 @@ data class Person(
     data class Sikkerhetstiltak(
         val tiltakstype: String,
         val beskrivelse: String,
-        val kontaktperson: SikkerhetstiltakKontaktperson,
+        val kontaktperson: SikkerhetstiltakKontaktperson?,
         @Serializable(with = IsoLocalDateSerializer::class)
         val gyldigFraOgMed: LocalDate,
         @Serializable(with = IsoLocalDateSerializer::class)
@@ -288,7 +289,7 @@ data class Person(
 }
 
 sealed class AccountMessageBase
-object InvalidAccountMessageBase : AccountMessageBase()
+object InvalidAccountMessage : AccountMessageBase()
 
 data class AccountMessage(
     val fnr: String,
@@ -309,7 +310,7 @@ fun List<AccountMessage>.toAccountCSV(): String = StringBuilder().let { sb ->
 }
 
 sealed class PersonCMessageBase
-object InvalidPersonCMessageBase : PersonCMessageBase()
+object InvalidPersonCMessage : PersonCMessageBase()
 
 data class PersonCMessage(
     val fnr: String,
