@@ -8,7 +8,6 @@ import kotlinx.serialization.Decoder
 import kotlinx.serialization.Encoder
 import kotlinx.serialization.ImplicitReflectionSerializer
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Optional
 import kotlinx.serialization.SerialDescriptor
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.UnstableDefault
@@ -148,12 +147,12 @@ data class Vegadresse(
 
 @Serializable
 data class Matrikkeladresse(
-        val matrikkelId: Int? = null,
-        val bruksenhetsnummer: String? = null,
-        val tilleggsnavn: String?,
-        val postnummer: String?,
-        val kommunenummer: String?,
-        val koordinater: Koordinater?
+    val matrikkelId: Int? = null,
+    val bruksenhetsnummer: String? = null,
+    val tilleggsnavn: String?,
+    val postnummer: String?,
+    val kommunenummer: String?,
+    val koordinater: Koordinater?
 )
 
 @Serializable
