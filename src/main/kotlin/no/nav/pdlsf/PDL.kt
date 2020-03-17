@@ -147,30 +147,30 @@ enum class Endringstype {
 
 @Serializable
 data class Vegadresse(
-    val matrikkelId: Int?,
-    val husnummer: String?,
-    val husbokstav: String?,
-    val bruksenhetsnummer: String?,
-    val adressenavn: String?,
-    val kommunenummer: String?,
-    val tilleggsnavn: String?,
-    val postnummer: String?,
-    val koordinater: Koordinater?
+    // val matrikkelId: Int?,
+    // val husnummer: String?,
+    // val husbokstav: String?,
+    // val bruksenhetsnummer: String?,
+    // val adressenavn: String?,
+    val kommunenummer: String?
+    // val tilleggsnavn: String?,
+    // val postnummer: String?,
+    // val koordinater: Koordinater?
 )
 
 @Serializable
 data class Matrikkeladresse(
-    val matrikkelId: Int? = null,
-    val bruksenhetsnummer: String? = null,
-    val tilleggsnavn: String?,
-    val postnummer: String?,
-    val kommunenummer: String?,
-    val koordinater: Koordinater?
+    // val matrikkelId: Int? = null,
+    // val bruksenhetsnummer: String? = null,
+    // val tilleggsnavn: String?,
+    // val postnummer: String?,
+    val kommunenummer: String?
+    // val koordinater: Koordinater?
 )
 
 @Serializable
 data class UkjentBosted(
-    val bostedskommune: String
+    val bostedskommune: String?
 )
 
 @Serializable
@@ -248,8 +248,8 @@ data class Person(
     @Serializable
     data class Bostedsadresse(
         @Serializable(with = IsoLocalDateSerializer::class)
-        val angittFlyttedato: LocalDate?,
-        val coAdressenavn: String?,
+        // val angittFlyttedato: LocalDate?,
+        // val coAdressenavn: String?,
         val vegadresse: Vegadresse?,
         val matrikkeladresse: Matrikkeladresse?,
         val ukjentBosted: UkjentBosted?,
@@ -266,29 +266,30 @@ data class Person(
 
     @Serializable
     data class Sikkerhetstiltak(
-        val tiltakstype: String,
+        // val tiltakstype: String,
         val beskrivelse: String,
-        val kontaktperson: SikkerhetstiltakKontaktperson?,
+        // val kontaktperson: SikkerhetstiltakKontaktperson?,
         @Serializable(with = IsoLocalDateSerializer::class)
         val gyldigFraOgMed: LocalDate,
         @Serializable(with = IsoLocalDateSerializer::class)
         val gyldigTilOgMed: LocalDate,
         val metadata: Metadata
-    ) {
-        @Serializable
-        data class SikkerhetstiltakKontaktperson(
-            val personident: String,
-            val enhet: String
-        )
-    }
+    )
+//    {
+//        @Serializable
+//        data class SikkerhetstiltakKontaktperson(
+//            val personident: String,
+//            val enhet: String
+//        )
+//    }
 
     @Serializable
     data class Navn(
         val fornavn: String,
         val mellomnavn: String?,
         val etternavn: String,
-        val forkortetNavn: String?,
-        val originaltNavn: String?,
+        // val forkortetNavn: String?,
+        // val originaltNavn: String?,
         val folkeregistermetadata: Folkeregistermetadata?,
         val metadata: Metadata
     )
