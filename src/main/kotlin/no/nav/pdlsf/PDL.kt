@@ -70,11 +70,24 @@ fun Query.createPersonCMessage(): PersonCMessageBase {
                 fnr = this.hentIdenter.identer.first { !it.historisk && it.gruppe.name.equals(IdentGruppe.FOLKEREGISTERIDENT.name) }.ident,
                 gradering = hentPerson.adressebeskyttelse.findGjeldeneAdressebeskytelse(),
                 sikkerhetstiltak = hentPerson.sikkerhetstiltak.findGjelendeSikkerhetstiltak()?.toSfListString().orEmpty(),
-                kommunenummer = hentPerson.bostedsadresse.findGjelendeBostedsadresse()?.matrikkeladresse?.kommunenummer.orEmpty() // TODO :: Ikke påkrevdfelt. Hvordan håndtere dette
+                kommunenummer = hentPerson.bostedsadresse.findGjelendeBostedsadresse()?.findKommunenummer().orEmpty()
         )
     }
     .onFailure { log.info { "Unable to create Person_C message - ${it.localizedMessage}" } }
     .getOrDefault(InvalidPersonCMessage)
+}
+
+private fun Person.Bostedsadresse.findKommunenummer(): String {
+    return vegadresse?.let { vegadresse ->
+        Metrics.vegadresse.inc()
+        vegadresse.kommunenummer }
+            ?: matrikkeladresse?.let { matrikkeladresse ->
+                Metrics.matrikkeladresse.inc()
+                matrikkeladresse.kommunenummer }
+            ?: ukjentBosted?.let { ukjentBosted ->
+                Metrics.ukjentBosted.inc()
+                ukjentBosted.bostedskommune }
+            ?: "".also { Metrics.ingenAdresse.inc() }
 }
 
 internal fun List<Person.Sikkerhetstiltak>.toSfListString(): String {
@@ -88,7 +101,7 @@ internal fun List<Person.Bostedsadresse>.findGjelendeBostedsadresse(): Person.Bo
 fun Query.createAccountMessage(): AccountMessageBase {
     return kotlin.runCatching {
         AccountMessage(
-                fnr = this.hentIdenter.identer.first { !it.historisk && it.gruppe.name.equals(IdentGruppe.FOLKEREGISTERIDENT.name) }.ident,
+                fnr = this.hentIdenter.identer.first { !it.historisk && it.gruppe.name == IdentGruppe.FOLKEREGISTERIDENT.name }.ident,
                 fornavn = this.hentPerson.navn.findGjelendeFregNavn().fornavn,
                 mellomnavn = this.hentPerson.navn.findGjelendeFregNavn().mellomnavn.orEmpty(),
                 etternavn = this.hentPerson.navn.findGjelendeFregNavn().etternavn
@@ -318,7 +331,7 @@ data class PersonCMessage(
     val sikkerhetstiltak: String,
     val kommunenummer: String
 ) : PersonCMessageBase() {
-    fun toCSVLine() = """"$fnr","$gradering","$sikkerhetstiltak","$kommunenummer","${kotlin.runCatching {kommunenummer .substring(0,1) }.getOrDefault("")}""""
+    fun toCSVLine() = """"$fnr","$gradering","$sikkerhetstiltak","$kommunenummer","${kotlin.runCatching {kommunenummer .substring(0,2) }.getOrDefault("")}""""
 }
 
 // TODO:: Name__c, skal bare være Name og de andre skal også fjerne __c på før vi går mot SF i preprod

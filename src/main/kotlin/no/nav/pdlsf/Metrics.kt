@@ -36,6 +36,30 @@ object Metrics {
             .help("No of sucessfully converted kafka topic values to query")
             .register()
 
+    val vegadresse: Gauge = Gauge
+            .build()
+            .name("vegadresse_gauge")
+            .help("Kommunenummer from vegadresse")
+            .register()
+
+    val matrikkeladresse: Gauge = Gauge
+            .build()
+            .name("matrikkeladresse_gauge")
+            .help("Kommunenummer from matrikkeladresse")
+            .register()
+
+    val ukjentBosted: Gauge = Gauge
+            .build()
+            .name("ukjentbosted_gauge")
+            .help("Kommunenummer from ukjentbosted")
+            .register()
+
+    val ingenAdresse: Gauge = Gauge
+            .build()
+            .name("ingenadresse_gauge")
+            .help("Kommunenummer from ingen adresse")
+            .register()
+
     init {
         DefaultExports.initialize()
         log.info { "Prometheus metrics are ready" }
@@ -44,10 +68,20 @@ object Metrics {
     fun sessionReset() {
         invalidQuery.clear()
         sucessfulValueToQuery.clear()
+        vegadresse.clear()
+        matrikkeladresse.clear()
+        ukjentBosted.clear()
+        ingenAdresse.clear()
     }
 
     fun resetAll() {
         invalidQuery.clear()
         sucessfulValueToQuery.clear()
+        invalidQuery.clear()
+        sucessfulValueToQuery.clear()
+        vegadresse.clear()
+        matrikkeladresse.clear()
+        ukjentBosted.clear()
+        ingenAdresse.clear()
     }
 }
